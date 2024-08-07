@@ -1,2 +1,2 @@
 # Frontend
-Frontend ul de Arheologie
+Frontend-ul de Arheologie
