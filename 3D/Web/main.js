@@ -156,7 +156,7 @@ fetch("SiteSection.txt").then(response=>response.text())
     let layerheight=siteScale.y/nroflayers
     let pos=new THREE.Vector3(0,siteScale.y+layerheight,0)
     let scale=new THREE.Vector3(siteScale.x,layerheight,siteScale.z)
-    console.log(layerheight)
+    //console.log(layerheight)
     //let col=new THREE.Color(#ff29f1)//placeholder color
     for(let i=0;i<nroflayers;i++)
     {
