@@ -14,7 +14,7 @@ const renderer = new THREE.WebGLRenderer({
 
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
-camera.position.setZ(5);
+camera.position.setZ(15);
 camera.layers.enable(1)
 camera.layers.enable(2)
 
@@ -40,90 +40,12 @@ function animate() {
 
 animate();
 
-//handle layers
-let layers=new Array()
-let currentlayer//int - represents the top visible layer
-
-fetch("SiteSection.txt").then(response=>response.text())
-  .then(text=>{
-    //do stuff with the text
-    //console.log(text)
-    let rows=text.split("\r\n");
-    let bits
-    
-    //make the site section object
-    bits=rows[0].split(" ")
-    let siteScale=new THREE.Vector3(parseFloat(bits[0]),parseFloat(bits[1]),parseFloat(bits[2]))
-    //the scale will be usfeul to us later on for the layers
-    const loader=new GLTFLoader();
-    loader.load( 'SiteSection.glb', function ( gltf ) {
-    gltf.scene.scale.set(siteScale.x,siteScale.y,siteScale.z)
-	  scene.add( gltf.scene );
-    }, undefined, function ( error ) {
-      console.error( error );
-    });
-    
-    // //we now need to add the archeological layers
-    // function addLayer(position,scale,color)
-    // {
-    //   //generate a layer (a cube) with given position, rotation, scale and color
-    //   const box=new THREE.BoxGeometry(scale.x,scale.y,scale.z);
-    //   const boxMaterial=new THREE.MeshStandardMaterial({color:cubecolor});
-    //   const layer=new THREE.Mesh(box,boxMaterial);
-    //   layer.disable(0)
-    //   layer.enable(2)
-    //   scene.add(layer);
-    //   layer.position.x=position.x;
-    //   layer.position.y=position.y;
-    //   layer.position.z=position.z;
-    //   layers.push(layer)
-    // }
-    // bits=rows[1].split(" ")
-    // let nroflayers=parseInt(bits[0])
-    // let layerheight=siteScale.y/nroflayers
-    // let pos=new THREE.Vector3(0,siteScale.y/2-layerheight/2,0)
-    // let scale=new THREE.Vector3(siteScale.x,layerheight,siteScale.z)
-    // let col=new THREE.Color("#ff29f1")//placeholder color
-    // for(i=0;i<nroflayers;i++)
-    // {
-    //   //add a layer
-    //   pos.y-=layerheight
-    //   addLayer(pos,scale,col)
-    // }
-  });
-
-// add listener for keyboard
-document.body.addEventListener('keydown', keyPressed, false);
-
-function keyPressed(event){
-  switch(event.key) {
-  	case 'z':
-      //make layers visible one by one moving upwards
-      if(currentlayer>0)
-      {
-        currentlayer--
-        //layers[currentlayer].layers.enable(2)
-      }
-      break
-    case 'x':
-      //make layers invisible one by one moving down
-      if(currentlayer<layers.length)
-      {
-        //layers[currentlayer].layers.disable(2)
-        currentlayer++
-      }
-      break
-  }
-  renderer.render(scene,camera);
-}
-
 //we need an array of objects holding all findings for the raycasting to work (saves performance)
 let objects=new Array()
 
 fetch("Findings.txt").then(response=>response.text())
     .then(text=>{
       //do stuff with the text
-      console.log(text)
       let rows=text.split("\r\n");
       let bits
       function addcube(position,rotation,size,cubecolor)
@@ -189,5 +111,85 @@ document.body.onclick = function (event) {
         camera.layers.enable(2)
       }
     }
+  }
+}
+
+//handle layers
+let layers=new Array()
+let currentlayer=0//int - represents the top visible layer
+
+fetch("SiteSection.txt").then(response=>response.text())
+  .then(text=>{
+    //do stuff with the text
+    let rows=text.split("\r\n");
+    let bits
+    
+    //make the site section object
+    bits=rows[0].split(" ")
+    let siteScale=new THREE.Vector3(parseFloat(bits[0]),parseFloat(bits[1]),parseFloat(bits[2]))
+    //the scale will be usfeul to us later on for the layers
+    const loader=new GLTFLoader();
+    loader.load( 'SiteSection.glb', function ( gltf ) {
+    gltf.scene.scale.set(siteScale.x,siteScale.y,siteScale.z)
+	  scene.add( gltf.scene );
+    }, undefined, function ( error ) {
+      console.error( error );
+    });
+    
+    //we now need to add the archeological layers
+    function addLayer(position,scale)
+    {
+      //generate a layer (a cube) with given position, rotation, scale and color
+      const box=new THREE.BoxGeometry(scale.x*2,scale.y*2,scale.z*2);
+      const boxMaterial=new THREE.MeshStandardMaterial({color:0xffffff});
+      const layer=new THREE.Mesh(box,boxMaterial);
+      layer.layers.disable(0)
+      layer.layers.enable(2)
+      scene.add(layer);
+      layer.position.x=position.x;
+      layer.position.y=position.y;
+      layer.position.z=position.z;
+      layers.push(layer)
+    }
+    bits=rows[1].split(" ")
+    let nroflayers=parseInt(bits[0])
+    let layerheight=siteScale.y/nroflayers
+    let pos=new THREE.Vector3(0,siteScale.y+layerheight,0)
+    let scale=new THREE.Vector3(siteScale.x,layerheight,siteScale.z)
+    console.log(layerheight)
+    //let col=new THREE.Color(#ff29f1)//placeholder color
+    for(let i=0;i<nroflayers;i++)
+    {
+      //add a layer
+      pos.y-=layerheight*2
+      addLayer(pos,scale)
+    }
+  });
+
+// add listener for keyboard
+document.body.addEventListener('keydown', keyPressed, false);
+
+function keyPressed(event){
+  if(o===null)
+  {
+    switch(event.key) {
+      case 'z':
+        //make layers visible one by one moving upwards
+        if(currentlayer>0)
+        {
+          currentlayer--
+          layers[currentlayer].layers.enable(2)
+        }
+        break
+      case 'x':
+        //make layers invisible one by one moving down
+        if(currentlayer<layers.length)
+        {
+          layers[currentlayer].layers.disable(2)
+          currentlayer++
+        }
+        break
+    }
+    renderer.render(scene,camera);
   }
 }
