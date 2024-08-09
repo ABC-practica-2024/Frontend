@@ -1,4 +1,4 @@
-# 3D Web preview
+# 3D Web Archeological Site Viewer
 ## Made with THREE JS, in VSCode and Blender.
 * Camera Controls: left click to rotate, right click to pan, scroll to zoom, ctrl-click to select a finding and hide all other objects, ctrl-click again to return to main view.
 * Other controls: x to hide the top visible layer, z to revert.
