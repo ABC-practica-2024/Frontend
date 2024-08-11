@@ -45,6 +45,9 @@ function animate() {
 
 animate();
 
+//cache the texture loader
+const textureLoader=new THREE.TextureLoader()
+
 //we need an array of objects holding all findings for the raycasting to work, otherwise we would be able to select archeological
 //layers or the site section object itself
 let objects=new Array()
@@ -129,7 +132,7 @@ fetch("SiteSection.txt").then(response=>response.text())
   .then(text=>{
     let rows=text.split("\r\n");
     let bits
-    
+
     //make the site section object
     bits=rows[0].split(" ")
     let siteScale=new THREE.Vector3(parseFloat(bits[0]),parseFloat(bits[1]),parseFloat(bits[2]))
@@ -141,6 +144,25 @@ fetch("SiteSection.txt").then(response=>response.text())
     }, undefined, function ( error ) {
       console.error( error );
     });
+
+    //this is how we can load models with different textures
+    /*//get the blue and yellow texture - placeholder
+    const blueTexture=textureLoader.load("blue.jpg")
+    const yellowTexture=textureLoader.load("yellow.jpg")
+    loader.load( 'SiteSection.glb', function ( gltf ) {
+      gltf.scene.scale.set(siteScale.x,siteScale.y,siteScale.z)
+      gltf.scene.traverse( function ( child ) {
+        //get the meshes
+        if ( child.isMesh ) {
+          //console.log(child)
+          child.material=new THREE.MeshStandardMaterial({map:yellowTexture})
+          }
+      })
+      gltf.scene.position.y=-10
+      scene.add( gltf.scene );
+      }, undefined, function ( error ) {
+        console.error( error );
+      });*/
     
     //we now need to add the archeological layers
     function addLayer(position,scale)
