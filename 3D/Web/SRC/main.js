@@ -69,7 +69,6 @@ fetch("../Data/Findings.json")
         function addcube(position, rotation, size, cubecolor) {
             //this represents a finding
             //generate a cube with given position, rotation, scale and color
-            console.log(position, rotation, size, cubecolor);
             const box = new THREE.BoxGeometry(size.x, size.y, size.z);
             const boxMaterial = new THREE.MeshStandardMaterial({
                 color: cubecolor,
@@ -85,7 +84,6 @@ fetch("../Data/Findings.json")
             objects.push(cube);
         }
         for (let i = 0; i < data.findings.length; i++) {
-            console.log(data.findings[i].position);
             let pos = new THREE.Vector3(
                 data.findings[i].position[0],
                 data.findings[i].position[1],
