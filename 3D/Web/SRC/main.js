@@ -8,6 +8,7 @@ import blue from "../Assets/Images/Textures/blue.jpg";
 import lightblue from "../Assets/Images/Textures/lightblue.jpg";
 import yellow from "../Assets/Images/Textures/yellow.jpg";
 import lightyellow from "../Assets/Images/Textures/lightyellow.jpg";
+
 //set up the scene
 const scene = new THREE.Scene();
 
@@ -62,15 +63,13 @@ const gltfLoader = new GLTFLoader();
 //layers or the site section object itself
 let objects = new Array();
 
-fetch("../Data/Findings.txt")
-    .then((response) => response.text())
-    .then((text) => {
-        //do stuff with the text
-        let rows = text.split("\n");
-        let bits;
+fetch("../Data/Findings.json")
+    .then((response) => response.json())
+    .then((data) => {
         function addcube(position, rotation, size, cubecolor) {
             //this represents a finding
             //generate a cube with given position, rotation, scale and color
+            console.log(position, rotation, size, cubecolor);
             const box = new THREE.BoxGeometry(size.x, size.y, size.z);
             const boxMaterial = new THREE.MeshStandardMaterial({
                 color: cubecolor,
@@ -85,26 +84,24 @@ fetch("../Data/Findings.txt")
             cube.rotation.z = rotation.z;
             objects.push(cube);
         }
-        for (let i = 0; i < rows.length; i += 4) {
-            bits = rows[i].split(" ");
+        for (let i = 0; i < data.findings.length; i++) {
+            console.log(data.findings[i].position);
             let pos = new THREE.Vector3(
-                parseFloat(bits[0]),
-                parseFloat(bits[1]),
-                parseFloat(bits[2])
+                data.findings[i].position[0],
+                data.findings[i].position[1],
+                data.findings[i].position[2]
             );
-            bits = rows[i + 1].split(" ");
             let rot = new THREE.Vector3(
-                parseFloat(bits[0]),
-                parseFloat(bits[1]),
-                parseFloat(bits[2])
+                data.findings[i].rotation[0],
+                data.findings[i].rotation[1],
+                data.findings[i].rotation[2]
             );
-            bits = rows[i + 2].split(" ");
             let siz = new THREE.Vector3(
-                parseFloat(bits[0]),
-                parseFloat(bits[1]),
-                parseFloat(bits[2])
+                data.findings[i].scale[0],
+                data.findings[i].scale[1],
+                data.findings[i].scale[2]
             );
-            let col = new THREE.Color(rows[i + 3].trimEnd("\r"));
+            let col = data.findings[i].color;
             addcube(pos, rot, siz, col);
         }
     });
@@ -146,23 +143,19 @@ document.body.onclick = function (event) {
 let layers = new Array();
 let currentlayer = 0; //int - represents the top visible layer
 let g = 0;
-fetch("../Data/SiteSection.txt")
-    .then((response) => response.text())
-    .then((text) => {
-        let rows = text.split("\n");
-        let bits;
-
+fetch("../Data/SiteSection.json")
+    .then((response) => response.json())
+    .then((data) => {
         let brownTexture = textureLoader.load(brown);
         let yellowTexture = textureLoader.load(yellow);
         let lightYellowTexture = textureLoader.load(lightyellow);
         let blueTexture = textureLoader.load(blue);
         let lightBlueTexture = textureLoader.load(lightblue);
         //make the site section object
-        bits = rows[0].split(" ");
         let siteScale = new THREE.Vector3(
-            parseFloat(bits[0]),
-            parseFloat(bits[1]),
-            parseFloat(bits[2])
+            parseFloat(data.scale[0]),
+            parseFloat(data.scale[1]),
+            parseFloat(data.scale[2])
         );
         //the scale will be useful to us later on for the layers
         gltfLoader.load(
@@ -233,8 +226,7 @@ fetch("../Data/SiteSection.txt")
                 }
             );
         }
-        bits = rows[1].split(" ");
-        let nroflayers = parseInt(bits[0]);
+        let nroflayers = data.layernr;
         let layerheight = siteScale.y / nroflayers;
         let scale = new THREE.Vector3(siteScale.x, layerheight, siteScale.z);
         for (let i = 0; i < nroflayers; i++) {

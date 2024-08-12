@@ -1,0 +1,22 @@
+{
+    "findings": [
+        {
+            "position": [0, -2, 1],
+            "scale": [1, 1, 1],
+            "rotation": [10, 45, 0],
+            "color": "#ff11ff"
+        },
+        {
+            "position": [-4, 2, 1],
+            "scale": [1, 1, 1],
+            "rotation": [-30, 45, 0],
+            "color": "#ff1fff"
+        },
+        {
+            "position": [0, 0, -5],
+            "scale": [1, 1, 1],
+            "rotation": [-30, 45, 60],
+            "color": "#ff1fff"
+        }
+    ]
+}
