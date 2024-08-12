@@ -10,7 +10,7 @@ const scene = new THREE.Scene();
 //set up the camera
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 //we can tweak this position
-camera.position.setZ(15);
+camera.position.setZ(25);
 camera.layers.enable(1)
 camera.layers.enable(2)
 
@@ -47,6 +47,8 @@ animate();
 
 //cache the texture loader
 const textureLoader=new THREE.TextureLoader()
+//cache the GLTF loader
+const gltfLoader=new GLTFLoader()
 
 //we need an array of objects holding all findings for the raycasting to work, otherwise we would be able to select archeological
 //layers or the site section object itself
@@ -55,7 +57,9 @@ let objects=new Array()
 fetch("Findings.txt").then(response=>response.text())
     .then(text=>{
       //do stuff with the text
-      let rows=text.split("\r\n");
+      console.log(text)
+      let rows=text.split("\n");
+      console.log(rows)
       let bits
       function addcube(position,rotation,size,cubecolor)
       {
@@ -75,6 +79,7 @@ fetch("Findings.txt").then(response=>response.text())
       }
       for(let i=0;i<rows.length;i+=4)
       {
+        rows[i]=rows[i].replace("\r","")
         bits=rows[i].split(" ")
         let pos=new THREE.Vector3(parseFloat(bits[0]),parseFloat(bits[1]),parseFloat(bits[2]))
         bits=rows[i+1].split(" ")
@@ -127,70 +132,90 @@ document.body.onclick = function (event) {
 //handle layers and the site section object
 let layers=new Array()
 let currentlayer=0//int - represents the top visible layer
-
+let g=0
 fetch("SiteSection.txt").then(response=>response.text())
   .then(text=>{
     let rows=text.split("\r\n");
     let bits
 
+    let brownTexture=textureLoader.load("brown.jpg")
+    let yellowTexture=textureLoader.load("yellow.jpg")
+    let lightYellowTexture=textureLoader.load("lightyellow.jpg")
+    let blueTexture=textureLoader.load("blue.jpg")
+    let lightBlueTexture=textureLoader.load("lightblue.jpg")
     //make the site section object
     bits=rows[0].split(" ")
     let siteScale=new THREE.Vector3(parseFloat(bits[0]),parseFloat(bits[1]),parseFloat(bits[2]))
     //the scale will be useful to us later on for the layers
-    const loader=new GLTFLoader();
-    loader.load( 'SiteSection.glb', function ( gltf ) {
+    gltfLoader.load( 'SiteBottom.glb', function ( gltf ) {
     gltf.scene.scale.set(siteScale.x,siteScale.y,siteScale.z)
 	  scene.add( gltf.scene );
+    let child=gltf.scene.children[0]
+    if(child.isMesh)
+    {
+      child.material=new THREE.MeshStandardMaterial({map:brownTexture})
+    }
     }, undefined, function ( error ) {
       console.error( error );
     });
 
-    //this is how we can load models with different textures
-    /*//get the blue and yellow texture - placeholder
-    const blueTexture=textureLoader.load("blue.jpg")
-    const yellowTexture=textureLoader.load("yellow.jpg")
-    loader.load( 'SiteSection.glb', function ( gltf ) {
-      gltf.scene.scale.set(siteScale.x,siteScale.y,siteScale.z)
-      gltf.scene.traverse( function ( child ) {
-        //get the meshes
-        if ( child.isMesh ) {
-          //console.log(child)
-          child.material=new THREE.MeshStandardMaterial({map:yellowTexture})
-          }
-      })
-      gltf.scene.position.y=-10
-      scene.add( gltf.scene );
-      }, undefined, function ( error ) {
-        console.error( error );
-      });*/
-    
     //we now need to add the archeological layers
-    function addLayer(position,scale)
+    function addLayer(position,scale,layerTexture,stripTexture)
     {
-      //generate a layer (a cube) with given position, rotation, scale and color (WIP)
-      const box=new THREE.BoxGeometry(scale.x*2,scale.y*2,scale.z*2);
-      const boxMaterial=new THREE.MeshStandardMaterial({color:0xffffff});
-      const layer=new THREE.Mesh(box,boxMaterial);
-      layer.layers.disable(0)
-      layer.layers.enable(2)
-      scene.add(layer);
-      layer.position.x=position.x;
-      layer.position.y=position.y;
-      layer.position.z=position.z;
-      layers.push(layer)
+      //generate a layer with a given position, rotation, scale and color (WIP)
+      gltfLoader.load('Layer.glb', function ( gltf ) {
+        gltf.scene.scale.set(scale.x,scale.y,scale.z)
+        gltf.scene.position.x=position.x
+        gltf.scene.position.y=position.y
+        gltf.scene.position.z=position.z
+        scene.add(gltf.scene);
+        //we need to change the children's material and layers
+        let child=gltf.scene.children[0]
+        if(child.isMesh)
+        {
+          child.material=new THREE.MeshStandardMaterial({map:layerTexture})
+        }
+        child.layers.disable(0)
+        child.layers.enable(2)
+        layers.push(gltf.scene)
+        }, undefined, function ( error ) {
+          console.error( error );
+        });
+      //generate a layer strip
+      gltfLoader.load( 'LayerStrip.glb', function ( gltf ) {
+        gltf.scene.scale.set(scale.x,scale.y,scale.z)
+        gltf.scene.position.x=position.x
+        gltf.scene.position.y=position.y
+        gltf.scene.position.z=position.z
+        scene.add( gltf.scene );
+        let child=gltf.scene.children[0]
+        if(child.isMesh)
+        {
+          child.material=new THREE.MeshStandardMaterial({map:stripTexture})
+        }
+        }, undefined, function ( error ) {
+          console.error( error );
+        });
     }
     bits=rows[1].split(" ")
     let nroflayers=parseInt(bits[0])
     let layerheight=siteScale.y/nroflayers
-    let pos=new THREE.Vector3(0,siteScale.y+layerheight,0)
     let scale=new THREE.Vector3(siteScale.x,layerheight,siteScale.z)
     //console.log(layerheight)
     //let col=new THREE.Color(#ff29f1)//placeholder color
     for(let i=0;i<nroflayers;i++)
     {
       //add a layer
-      pos.y-=layerheight*2
-      addLayer(pos,scale)
+      let pos=new THREE.Vector3(0,siteScale.y-((i+1)*2-1)*layerheight,0)
+      if(g%2==0)
+      {
+        addLayer(pos,scale,yellowTexture,lightYellowTexture)
+      }
+      else
+      {
+        addLayer(pos,scale,blueTexture,lightBlueTexture)
+      }
+      g++
     }
   });
 
@@ -208,7 +233,9 @@ function keyPressed(event){
         if(currentlayer>0)
         {
           currentlayer--
-          layers[currentlayer].layers.enable(2)
+          layers[currentlayer].traverse( function( object ) {
+            object.layers.enable(2)
+          });
         }
         break
       case 'x':
@@ -216,7 +243,9 @@ function keyPressed(event){
         if(currentlayer<layers.length)
         {
           //layers only have layer 2, so by disabling this layer we hide them from the camera
-          layers[currentlayer].layers.disable(2)
+          layers[currentlayer].traverse( function( object ) {
+            object.layers.disable(2)
+          });
           currentlayer++
         }
         break
