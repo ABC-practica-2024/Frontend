@@ -3,11 +3,11 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls";
 //import object loader - this is for importing 3D models
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 //import textures
-import brown from "../Assets/Images/Textures/brown.jpg";
-import blue from "../Assets/Images/Textures/blue.jpg";
-import lightblue from "../Assets/Images/Textures/lightblue.jpg";
-import yellow from "../Assets/Images/Textures/yellow.jpg";
-import lightyellow from "../Assets/Images/Textures/lightyellow.jpg";
+import brown from "../assets/images/textures/brown.jpg";
+import blue from "../assets/images/textures/blue.jpg";
+import lightblue from "../assets/images/textures/lightblue.jpg";
+import yellow from "../assets/images/textures/yellow.jpg";
+import lightyellow from "../assets/images/textures/lightyellow.jpg";
 
 //set up the scene
 const scene = new THREE.Scene();
@@ -19,7 +19,7 @@ const camera = new THREE.PerspectiveCamera(
     0.1,
     1000
 );
-//we can tweak this position
+//we can tweak this position in the future
 camera.position.setZ(25);
 camera.layers.enable(1);
 camera.layers.enable(2);
@@ -75,12 +75,8 @@ fetch("../Data/Findings.json")
             });
             const cube = new THREE.Mesh(box, boxMaterial);
             scene.add(cube);
-            cube.position.x = position.x;
-            cube.position.y = position.y;
-            cube.position.z = position.z;
-            cube.rotation.x = rotation.x;
-            cube.rotation.y = rotation.y;
-            cube.rotation.z = rotation.z;
+            cube.position.set(position.x, position.y, position.z);
+            cube.rotation.set(rotation.x, rotation.y, rotation.z);
             objects.push(cube);
         }
         for (let i = 0; i < data.findings.length; i++) {
@@ -106,41 +102,46 @@ fetch("../Data/Findings.json")
 
 //o represents the selected object, it is null when we are in the main view
 let o = null;
+//cache the raycaster for better performance
+const raycaster = new THREE.Raycaster();
+//this array will hold all raycast intersects
+let intersects = new Array();
 document.body.onclick = function (event) {
     if (event.ctrlKey) {
         //we right clicked
         if (o === null) {
             //we were in the main view
             let mouse = new THREE.Vector2();
+            //we need to get the coordinates of the mouse cursor on the screen
             mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
             mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
-            const raycaster = new THREE.Raycaster();
+            //send a ray from the camera to the cursor
             raycaster.setFromCamera(mouse, camera);
-            let intersects = raycaster.intersectObjects(objects);
+            intersects = raycaster.intersectObjects(objects);
             if (intersects.length > 0) {
                 o = intersects[0].object;
-                //we clicked on a finding, so we must hide everything else
-                camera.layers.disable(0);
-                camera.layers.disable(2); //we hide the archeological layers as well
+                //the ray intersected something => we ctrl-clicked on a finding
+                //we must hide everything in the scene that is not the selected object
+                camera.layers.disable(0); //the findings and site section only have layer 0 enabled, so we disable it for the camera to hide them
+                camera.layers.disable(2); //we hide the archeological layers as well in focus view
                 o = intersects[0].object;
-                o.layers.enable(1);
+                o.layers.enable(1); //enable layer 1 on the finding we selected so the camera can see it
             }
         } else {
             if (!(o === null)) {
                 //we were in "focused" view and must switch to main view, we must reveal all hidden objects
-                o.layers.disable(1); //we need to disable layer 1 for the viewed object, otherwise it would stay visible next time we enter focus view
+                o.layers.disable(1); //we need to disable layer 1 for the previously viewed object, otherwise it would stay visible next time we enter focus view
                 o = null; //we set o to null to let the other functions know we are now in the main view
-                camera.layers.enable(0); //make the camera see other objects in the site
-                camera.layers.enable(2); //this way we can see the archeological layers which would be visible to us in main view
+                camera.layers.enable(0); //make it so the camera can see the other objects in the site section
+                camera.layers.enable(2); //this way we can see the archeological layers which would normally be visible to us in the main view
             }
         }
     }
 };
 
 //handle layers and the site section object
-let layers = new Array();
+let layers = new Array(); //contains all layers
 let currentlayer = 0; //int - represents the top visible layer
-let g = 0;
 fetch("../Data/SiteSection.json")
     .then((response) => response.json())
     .then((data) => {
@@ -155,9 +156,9 @@ fetch("../Data/SiteSection.json")
             parseFloat(data.scale[1]),
             parseFloat(data.scale[2])
         );
-        //the scale will be useful to us later on for the layers
+        //the scale will be used to calculate the height of an individual archeological layer
         gltfLoader.load(
-            "../Assets/Models/SiteBottom.glb",
+            "../assets/models/SiteBottom.glb",
             function (gltf) {
                 gltf.scene.scale.set(siteScale.x, siteScale.y, siteScale.z);
                 scene.add(gltf.scene);
@@ -175,15 +176,13 @@ fetch("../Data/SiteSection.json")
         );
 
         //we now need to add the archeological layers
-        function addLayer(position, scale, layerTexture, stripTexture) {
+        function addLayer(height, scale, layerTexture, stripTexture) {
             //generate a layer with a given position, rotation, scale and color (WIP)
             gltfLoader.load(
-                "../Assets/Models/Layer.glb",
+                "../assets/models/Layer.glb",
                 function (gltf) {
                     gltf.scene.scale.set(scale.x, scale.y, scale.z);
-                    gltf.scene.position.x = position.x;
-                    gltf.scene.position.y = position.y;
-                    gltf.scene.position.z = position.z;
+                    gltf.scene.position.y = height;
                     scene.add(gltf.scene);
                     //we need to change the children's material and layers
                     let child = gltf.scene.children[0];
@@ -203,12 +202,10 @@ fetch("../Data/SiteSection.json")
             );
             //generate a layer strip
             gltfLoader.load(
-                "../Assets/Models/LayerStrip.glb",
+                "../assets/models/LayerStrip.glb",
                 function (gltf) {
                     gltf.scene.scale.set(scale.x, scale.y, scale.z);
-                    gltf.scene.position.x = position.x;
-                    gltf.scene.position.y = position.y;
-                    gltf.scene.position.z = position.z;
+                    gltf.scene.position.y = height;
                     scene.add(gltf.scene);
                     let child = gltf.scene.children[0];
                     if (child.isMesh) {
@@ -229,23 +226,28 @@ fetch("../Data/SiteSection.json")
         let scale = new THREE.Vector3(siteScale.x, layerheight, siteScale.z);
         for (let i = 0; i < nroflayers; i++) {
             //add a layer
-            let pos = new THREE.Vector3(
-                0,
-                siteScale.y - ((i + 1) * 2 - 1) * layerheight,
-                0
-            );
-            if (g % 2 == 0) {
-                addLayer(pos, scale, yellowTexture, lightYellowTexture);
+            if (i % 2 == 0) {
+                addLayer(
+                    siteScale.y - ((i + 1) * 2 - 1) * layerheight,
+                    scale,
+                    yellowTexture,
+                    lightYellowTexture
+                );
             } else {
-                addLayer(pos, scale, blueTexture, lightBlueTexture);
+                addLayer(
+                    siteScale.y - ((i + 1) * 2 - 1) * layerheight,
+                    scale,
+                    blueTexture,
+                    lightBlueTexture
+                );
             }
-            g++;
         }
     });
 
 // add listener for key press events
 document.body.addEventListener("keydown", keyPressed, false);
 
+//this function will detect key presses
 function keyPressed(event) {
     if (o === null) {
         //we are currently in the main view
