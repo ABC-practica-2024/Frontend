@@ -30,15 +30,22 @@ const renderer = new THREE.WebGLRenderer({
 });
 renderer.setPixelRatio(window.devicePixelRatio);
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
 
 function render() {
     renderer.render(scene, camera);
 }
 
 const ambientLight = new THREE.AmbientLight();
+ambientLight.intensity = 0.7;
 scene.add(ambientLight);
 ambientLight.layers.enableAll();
-ambientLight.position.y = 10; //we put the light a bit higher up, otherwise if we put an object at the origin it would block it
+
+const directionalLight = new THREE.DirectionalLight();
+directionalLight.castShadow = true;
+scene.add(directionalLight);
+directionalLight.layers.enableAll();
+directionalLight.position.y = 11;
 
 const controls = new OrbitControls(camera, renderer.domElement);
 
@@ -75,6 +82,8 @@ fetch("../Data/Findings.json")
             });
             const cube = new THREE.Mesh(box, boxMaterial);
             scene.add(cube);
+            cube.castShadow = true;
+            cube.receiveShadow = true;
             cube.position.set(position.x, position.y, position.z);
             cube.rotation.set(rotation.x, rotation.y, rotation.z);
             objects.push(cube);
@@ -167,6 +176,7 @@ fetch("../Data/SiteSection.json")
                     child.material = new THREE.MeshStandardMaterial({
                         map: brownTexture,
                     });
+                    child.receiveShadow = true;
                 }
             },
             undefined,
@@ -187,6 +197,7 @@ fetch("../Data/SiteSection.json")
                     //we need to change the children's material and layers
                     let child = gltf.scene.children[0];
                     if (child.isMesh) {
+                        child.receiveShadow = true;
                         child.material = new THREE.MeshStandardMaterial({
                             map: layerTexture,
                         });
@@ -209,6 +220,7 @@ fetch("../Data/SiteSection.json")
                     scene.add(gltf.scene);
                     let child = gltf.scene.children[0];
                     if (child.isMesh) {
+                        child.receiveShadow = true;
                         child.material = new THREE.MeshStandardMaterial({
                             //give layer strips a different color from the actual layer, so we can actually differentiate between them
                             map: stripTexture,
