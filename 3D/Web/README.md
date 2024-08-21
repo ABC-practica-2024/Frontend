@@ -23,5 +23,5 @@ Made with THREE JS, in VSCode and Blender.
 
 #### Dummy data
 
--   _Findings.txt_ contains position, scale, rotation (all in Vector3 format) and color (in hexadecimal format) in 4 lines per each object.
--   _SiteSection.txt_ contains the scale of the section in Vector3 format on a line, and on the next line the number of layers.
+-   _Findings.json_ contains an array with each element containing the position and rotation (in Vector3 format) and mesh data for each finding.
+-   _SiteSection.json_ contains the scale of the section in Vector3 format on a line, and on the next line the number of layers.

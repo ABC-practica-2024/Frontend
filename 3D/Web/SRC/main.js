@@ -276,3 +276,37 @@ function keyPressed(event) {
         render();
     }
 }
+
+function AddFinding(position, rotation, modelURL) {
+    gltfLoader.load(
+        modelURL,
+        function (gltf) {
+            scene.add(gltf.scene);
+            {
+                //set position and rotation
+                gltf.scene.position.x = position.x;
+                gltf.scene.position.y = position.y;
+                gltf.scene.position.z = position.z;
+                gltf.scene.rotation.x = THREE.MathUtils.DEG2RAD * rotation.x;
+                gltf.scene.rotation.y = THREE.MathUtils.DEG2RAD * rotation.y;
+                gltf.scene.rotation.z = THREE.MathUtils.DEG2RAD * rotation.z;
+            }
+            let child = gltf.scene.children[0];
+            if (child.isMesh) {
+                child.receiveShadow = true;
+                child.castShadow = true;
+            }
+            objects.push(gltf.scene);
+        },
+        undefined,
+        function (error) {
+            console.error(error);
+        }
+    );
+}
+
+AddFinding(
+    new THREE.Vector3(0, 5, 0),
+    new THREE.Vector3(0, 45, 0),
+    "../assets/models/Finding.glb"
+);
