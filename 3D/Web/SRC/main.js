@@ -65,6 +65,8 @@ animate();
 const textureLoader = new THREE.TextureLoader();
 //cache the GLTF loader
 const gltfLoader = new GLTFLoader();
+//cache the buffer geometry loader
+const bufferGeometryLoader = new THREE.BufferGeometryLoader();
 
 //we need an array of objects holding all findings for the raycasting to work, otherwise we would be able to select archeological
 //layers or the site section object itself
@@ -73,39 +75,24 @@ let objects = new Array();
 fetch("../Data/Findings.json")
     .then((response) => response.json())
     .then((data) => {
-        function addcube(position, rotation, size, cubecolor) {
-            //this represents a finding
-            //generate a cube with given position, rotation, scale and color
-            const box = new THREE.BoxGeometry(size.x, size.y, size.z);
-            const boxMaterial = new THREE.MeshStandardMaterial({
-                color: cubecolor,
-            });
-            const cube = new THREE.Mesh(box, boxMaterial);
+        function addfinding(finding) {
+            let mesh = finding.mesh;
+            let geometry = bufferGeometryLoader.parse(mesh);
+            const material = new THREE.MeshBasicMaterial({});
+            const cube = new THREE.Mesh(geometry, material);
             scene.add(cube);
-            cube.castShadow = true;
             cube.receiveShadow = true;
-            cube.position.set(position.x, position.y, position.z);
-            cube.rotation.set(rotation.x, rotation.y, rotation.z);
+            cube.castShadow = true;
+            cube.position.x = finding.position[0];
+            cube.position.y = finding.position[1];
+            cube.position.z = finding.position[2];
+            cube.rotation.x = THREE.MathUtils.degToRad(finding.rotation[0]); //the rotations are calculated in radians, so we need to convert
+            cube.rotation.y = THREE.MathUtils.degToRad(finding.rotation[1]);
+            cube.rotation.z = THREE.MathUtils.degToRad(finding.rotation[2]);
             objects.push(cube);
         }
         for (let i = 0; i < data.findings.length; i++) {
-            let pos = new THREE.Vector3(
-                data.findings[i].position[0],
-                data.findings[i].position[1],
-                data.findings[i].position[2]
-            );
-            let rot = new THREE.Vector3(
-                data.findings[i].rotation[0],
-                data.findings[i].rotation[1],
-                data.findings[i].rotation[2]
-            );
-            let siz = new THREE.Vector3(
-                data.findings[i].scale[0],
-                data.findings[i].scale[1],
-                data.findings[i].scale[2]
-            );
-            let col = data.findings[i].color;
-            addcube(pos, rot, siz, col);
+            addfinding(data.findings[i]);
         }
     });
 
@@ -151,7 +138,7 @@ document.body.onclick = function (event) {
 //handle layers and the site section object
 let layers = new Array(); //contains all layers
 let currentlayer = 0; //int - represents the top visible layer
-fetch("../Data/SiteSection.json")
+fetch("../data/SiteSection.json")
     .then((response) => response.json())
     .then((data) => {
         let brownTexture = textureLoader.load(brown);
